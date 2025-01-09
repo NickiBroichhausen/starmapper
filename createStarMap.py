@@ -7,7 +7,7 @@ import StarSift as ss
 def createStarMap(folder, visualisation=False):
     # folder = "run-all"
     paths = ss.get_image_paths(folder)
-    paths = list(reversed(paths))   # TODO remove this line if the camera is not upside down 
+    # paths = list(reversed(paths))   # TODO remove this line if the camera is not upside down 
     images = ss.load_images(paths)  # TODO make optional as only used for visualisation
 
     start_image = 0 # TODO 10,11 not working
@@ -70,7 +70,7 @@ def createStarMap(folder, visualisation=False):
                     y_min = transformed_point[1]
                 if transformed_point[1] > y_max:
                     y_max = transformed_point[1]
-        print(f"warped descriptors {len(warped_descriptors)}")
+        print(f"warped descriptors {warped_descriptors.shape[0]}")
         combined_descriptors = np.concatenate((combined_descriptors, warped_descriptors))
         prev_x_max, prev_x_min, prev_y_max, prev_y_min = x_max, x_min, y_max, y_min
         # print(x_min, x_max, y_min, y_max)
