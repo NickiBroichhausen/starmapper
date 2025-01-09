@@ -29,6 +29,10 @@ while True:
         val = input("1) Take pictures and get descriptors\n2) Stitch star map\n3) Find current angle\n4) Set working folder\n5) Redo descriptors\n")
 
         if val == "1":
+            # check if folder exist
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+
             sleep_time = 5
             start_angle = 0
             max_angle = 360
@@ -63,6 +67,11 @@ while True:
             # TODO get this from UART
             input = input("Enter folder name: ")
             folder = input
+
+            # check if folder exist
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+
         elif val == "5":
             images = ss.get_image_paths(folder)
             for img in images:
