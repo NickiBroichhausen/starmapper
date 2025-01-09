@@ -6,6 +6,7 @@ from time import sleep
 cam = None
 
 def init(preview=False):
+    global cam
     cam = Camera()
     cam.greyscale = True
     #cam.still_size = (2592, 1944)  #maybe reduce to make one star only a few pixels 
@@ -36,10 +37,12 @@ def init(preview=False):
 #         cam.stop_preview()
 
 def take_picture(image_path):
+    global cam
     # TODO move image distortion here
     cam.take_photo(image_path)
 
 def deinit(preview=False):
+    global cam
     if preview:
         cam.stop_preview()
     cam.close()
