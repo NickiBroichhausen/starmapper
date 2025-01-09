@@ -61,7 +61,7 @@ def createStarMap(folder, visualisation=False):
             # TODO formations at edges might be lost
             if (transformed_point[0] - 10 < prev_x_min or transformed_point[0] + 10 > prev_x_max or 
                 transformed_point[1] - 10 < prev_y_min or transformed_point[1] + 10 > prev_y_max):
-                np.append(warped_descriptors, warped_descriptor, axis=0)
+                np.append(warped_descriptors, [np.array(warped_descriptor, dtype=object)])
                 if transformed_point[0] < x_min:
                     x_min = transformed_point[0]
                 if transformed_point[0] > x_max:
