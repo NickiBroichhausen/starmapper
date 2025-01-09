@@ -1,5 +1,5 @@
 
-import camera
+# import camera
 import AttitudeDetermination
 import extractDescpriptors
 import createStarMap
@@ -21,7 +21,7 @@ import StarSift as ss
 # TODO configure these
 folder = "star_data"
 # folder = "run-all"
-visualisation = False
+visualisation = True
 
 while True:
     try:
@@ -39,24 +39,24 @@ while True:
             increment = 15
             angle = start_angle
 
-            camera.init()
-            while(angle <= max_angle):
-                print(f"angle set to {angle}")  # TODO sent uart command and wait for answer
-                sleep(sleep_time) # wait for uart feedback from pointing
-                image_path = os.path.join(folder, f"image_{angle}.jpg")
-                camera.take_picture(image_path)
-                # extractDescpriptors.analyse(image_path, folder)
-                threading.Thread(target=extractDescpriptors.analyse, args=(image_path, folder, visualisation)).start()
-                angle = angle + increment
-            camera.deinit()
+            # camera.init()
+            # while(angle <= max_angle):
+            #     print(f"angle set to {angle}")  # TODO sent uart command and wait for answer
+            #     sleep(sleep_time) # wait for uart feedback from pointing
+            #     image_path = os.path.join(folder, f"image_{angle}.jpg")
+            #     camera.take_picture(image_path)
+            #     # extractDescpriptors.analyse(image_path, folder)
+            #     threading.Thread(target=extractDescpriptors.analyse, args=(image_path, folder, visualisation)).start()
+            #     angle = angle + increment
+            # camera.deinit()
             # print("Pictures taken and extracted descriptors")
         elif val == "2":
             createStarMap.createStarMap(folder, visualisation)
         elif val == "3":
-            image_path = "current"
-            camera.init()
-            camera.take_picture(image_path)
-            camera.deinit()
+            image_path = "current_180.jpg"
+            # camera.init()
+            # camera.take_picture(image_path)
+            # camera.deinit()
             # image_path = "run-all copy/image_195.jpg"
             # TODO remove star map and visualization to improve performance
             attidude = AttitudeDetermination.find_attitude(folder, 
