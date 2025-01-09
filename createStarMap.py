@@ -118,7 +118,7 @@ def createStarMap(folder, visualisation=False):
 
 
     print(f"saving combined descriptors {len(combined_descriptors)}")
-    np.save(os.path.join(folder, f"combined-descriptors.npy"), combined_descriptors, allow_pickle=True)
+    np.save(os.path.join(folder, f"combined-descriptors.npy"),  np.array(combined_descriptors, dtype=object), allow_pickle=True)
 
     # px_distance_current = (t_x-image.shape[1] // 2)**2 + (t_y-image.shape[0] // 2)**2   # TODO maybe use top left corner instead of center? Maybe change this for the total distance?
 
