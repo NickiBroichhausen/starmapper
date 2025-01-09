@@ -28,3 +28,5 @@
 /run-all
 /run-all copy
 /undistortion
+*.jpg
+*.npy

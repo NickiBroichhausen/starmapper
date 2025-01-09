@@ -237,8 +237,8 @@ def calc_error(feature, feature2, rot_guess):
 
 def acceptable_error(d_error, rot_error, s_error, b_error):
     # TODO replace this magic numbers with something that makes sense
-    if d_error < 0.25:  # TODO do image distortion first
-        if rot_error < 7: 
+    if d_error < 0.1:  # TODO do image distortion first
+        if rot_error < 5: 
             return True
             if s_error < 1.0:  #dont do percentage error for size
                 # return True
@@ -388,6 +388,27 @@ def get_transform_matrix(points1, points2):
    #TODO check which threshold makes sense
     # matrix = cv2.estimateAffine2D( np.array(points2, dtype=np.float32), np.array(points1, dtype=np.float32), cv2.RANSAC, ransacReprojThreshold=300.0)[0]
     matrix = cv2.estimateAffinePartial2D( np.array(points2, dtype=np.float32), np.array(points1, dtype=np.float32), cv2.RANSAC, ransacReprojThreshold=300.0)[0]
+    
+    rotation_scaling = matrix[:2, :2]
+    # Compute scaling factors
+    scale_x = np.linalg.norm(rotation_scaling[0])  # Norm of the first row
+    scale_y = np.linalg.norm(rotation_scaling[1])  # Norm of the second row
+    # Normalize the rotation-scaling matrix
+    normalized_rotation = rotation_scaling / np.array([scale_x, scale_y]).reshape(2, 1)
+    # Replace the rotation-scaling part with the normalized rotation matrix
+    normalized_matrix = matrix.copy()
+    normalized_matrix[:2, :2] = normalized_rotation
+    matrix = normalized_matrix
+
     H = np.eye(3)
     H[:2, :] = matrix
+
+    # scale_rotation_matrix = matrix[:2, :2]
+    
+    # # Compute scaling factors as the norms of the rows
+    # scale_x = np.linalg.norm(scale_rotation_matrix[0])
+    # scale_y = np.linalg.norm(scale_rotation_matrix[1])
+    
+    # print("INFO: Scale factors:", scale_x, scale_y)
+
     return H
