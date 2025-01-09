@@ -7,6 +7,7 @@ import StarSift as ss
 def createStarMap(folder, visualisation=False):
     # folder = "run-all"
     paths = ss.get_image_paths(folder)
+    # paths = paths[5:7]
     # paths = list(reversed(paths))   # TODO remove this line if the camera is not upside down 
     images = ss.load_images(paths)  # TODO make optional as only used for visualisation
 
@@ -16,7 +17,7 @@ def createStarMap(folder, visualisation=False):
     # np.save(os.path.join(folder, f"{os.path.basename(paths[start_image])}-descriptors.npy"), descriptors1)
     descriptors1 = np.load(os.path.join(folder, f"{os.path.basename(paths[start_image])}-descriptors.npy"), allow_pickle=True)
 
-    combined_descriptors = np.array(descriptors1, dtype=object)
+    combined_descriptors = list(descriptors1)
     combined_H = np.eye(3)
 
     combined_matrix = np.eye(3)
@@ -52,7 +53,7 @@ def createStarMap(folder, visualisation=False):
         np.save(name, H)
 
         combined_H = combined_H.dot(H)
-        warped_descriptors = np.array([], dtype=object)
+        warped_descriptors = []
         x_min, x_max, y_min, y_max = images[i].shape[1], 0, images[i].shape[0], 0
         for descriptor in descriptors2:
             warped_descriptor = ss.descriptor_transformation(descriptor, combined_H)
@@ -61,7 +62,7 @@ def createStarMap(folder, visualisation=False):
             # TODO formations at edges might be lost
             if (transformed_point[0] - 10 < prev_x_min or transformed_point[0] + 10 > prev_x_max or 
                 transformed_point[1] - 10 < prev_y_min or transformed_point[1] + 10 > prev_y_max):
-                np.append(warped_descriptors, [np.array(warped_descriptor, dtype=object)])
+                warped_descriptors.append(warped_descriptor)
                 if transformed_point[0] < x_min:
                     x_min = transformed_point[0]
                 if transformed_point[0] > x_max:
@@ -70,8 +71,8 @@ def createStarMap(folder, visualisation=False):
                     y_min = transformed_point[1]
                 if transformed_point[1] > y_max:
                     y_max = transformed_point[1]
-        print(f"warped descriptors {warped_descriptors.shape[0]}")
-        combined_descriptors = np.concatenate((combined_descriptors, warped_descriptors))
+        print(f"warped descriptors {len(warped_descriptors)}")
+        combined_descriptors = combined_descriptors + warped_descriptors
         prev_x_max, prev_x_min, prev_y_max, prev_y_min = x_max, x_min, y_max, y_min
         # print(x_min, x_max, y_min, y_max)
         descriptors1 = descriptors2

@@ -20,6 +20,17 @@ distortion_coefficients = fs.getNode("distortion_coefficients").mat()
 new_camera_matrix = fs.getNode("new_camera_matrix").mat()
 fs.release()
 
+    
+# Create mapping arrays for x and y
+map_x = None
+map_y = None
+
+try:
+    map_x = np.load("map_x.npy")
+    map_y = np.load("map_y.npy")
+except:
+    print("WARNING: Mapping arrays not found")
+
 if new_camera_matrix is None:
     print("ERROR: Camera calibration not found")
 
@@ -38,6 +49,10 @@ def load_images(image_paths, undistort=True):
     images = [cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) for img in images]
     if undistort:
         images = [cv2.undistort(img, camera_matrix, distortion_coefficients, None, new_camera_matrix) for img in images]
+        # TODO remove this if camera is on rotation axis
+        if map_x is not None and map_y is not None:
+            print("INFO: Using remapping")
+            images = [cv2.remap(img, map_x, map_y, cv2.INTER_LINEAR) for img in images]
     images = [cv2.resize(img, (0,0), fx=RESIZE_FACTOR, fy=RESIZE_FACTOR) for img in images]
     return images
 
@@ -352,6 +367,7 @@ def match_descriptors(descriptors1, descriptors2, image1=None, image2=None):
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
+    print(f"INFO: Found {len(matched_points1)} matches")
     return matched_points1, matched_points2
 
 
