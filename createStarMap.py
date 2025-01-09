@@ -16,7 +16,7 @@ def createStarMap(folder, visualisation=False):
     # np.save(os.path.join(folder, f"{os.path.basename(paths[start_image])}-descriptors.npy"), descriptors1)
     descriptors1 = np.load(os.path.join(folder, f"{os.path.basename(paths[start_image])}-descriptors.npy"), allow_pickle=True)
 
-    combined_descriptors = descriptors1
+    combined_descriptors = np.array(descriptors1, dtype=object)
     combined_H = np.eye(3)
 
     combined_matrix = np.eye(3)
@@ -52,7 +52,7 @@ def createStarMap(folder, visualisation=False):
         np.save(name, H)
 
         combined_H = combined_H.dot(H)
-        warped_descriptors = []
+        warped_descriptors = np.array([], dtype=object)
         x_min, x_max, y_min, y_max = images[i].shape[1], 0, images[i].shape[0], 0
         for descriptor in descriptors2:
             warped_descriptor = ss.descriptor_transformation(descriptor, combined_H)
