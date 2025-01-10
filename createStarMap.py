@@ -4,6 +4,43 @@ import os
 import StarSift as ss
 
 
+def decompose_rotation(H):
+    """Extract rotation matrix from homography."""
+    R = H[:3, :3]
+    return R
+
+def compute_rotation_angle(R):
+    """Compute the rotation angle (in radians) from a rotation matrix."""
+    angle = np.arccos((np.trace(R) - 1) / 2)  # Trace formula
+    return angle if not np.isnan(angle) else 0
+
+def rotation_matrix(theta):
+    """Create a 3x3 rotation matrix for a given angle theta (in radians)."""
+    return np.array([
+        [np.cos(theta), -np.sin(theta), 0],
+        [np.sin(theta), np.cos(theta), 0],
+        [0, 0, 1]
+    ])
+
+def get_loop_closing_delta_R(H_loop, H_list):
+    # points1_loop, points2_loop = ss.match_descriptors(descriptors1, descriptors_loop_closing, start_image, last_image)
+    # H_loop = ss.get_transform_matrix(points1_loop, points2_loop)
+    # H_loop = H[-1]
+
+    n = len(H_list)
+    
+    # Decompose loop closure homography to find rotation
+    R_loop = decompose_rotation(H_loop)
+    print(R_loop)
+    theta_loop = compute_rotation_angle(R_loop)
+    
+    # Compute the angular adjustment per step
+    print(f"INFO: rotation in loop: {np.degrees(theta_loop)}")
+    delta_theta = theta_loop / n
+    print(f"INFO: loop closing correction: {np.degrees(delta_theta)}")
+    delta_R = rotation_matrix(-delta_theta)
+    return delta_R
+
 def createStarMap(folder, visualisation=False):
     # folder = "run-all"
     paths = ss.get_image_paths(folder)
@@ -12,10 +49,12 @@ def createStarMap(folder, visualisation=False):
     images = ss.load_images(paths)  # TODO make optional as only used for visualisation
 
     start_image = 0 # TODO 10,11 not working
+    last_image = len(images) - 1
 
     # _, descriptors1 = ss.get_descriptors(images[start_image], True)
     # np.save(os.path.join(folder, f"{os.path.basename(paths[start_image])}-descriptors.npy"), descriptors1)
     descriptors1 = np.load(os.path.join(folder, f"{os.path.basename(paths[start_image])}-descriptors.npy"), allow_pickle=True)
+    descriptors_loop_start = descriptors1.copy()
 
     combined_descriptors = list(descriptors1)
     combined_H = np.eye(3)
@@ -34,6 +73,8 @@ def createStarMap(folder, visualisation=False):
     px_distances = [0]
     image_angles = [int(paths[start_image].split("_")[-1].split(".")[0])]
 
+    H_list = []
+
     for i in range(start_image+1,  len(images)):
         print(f"processing image {paths[i]}")
         # _, descriptors2 = ss.get_descriptors(images[i], True)
@@ -49,12 +90,96 @@ def createStarMap(folder, visualisation=False):
             points1, points2 = ss.match_descriptors(descriptors1, descriptors2)
         H = ss.get_transform_matrix(points1, points2)
 
+        H_list.append(H)
+
+        # name = os.path.join(folder, f"{os.path.basename(paths[i-1])}-{os.path.basename(paths[i])}.npy")
+        # np.save(name, H)
+
+        combined_H = combined_H.dot(H)
+        # warped_descriptors = []
+        # x_min, x_max, y_min, y_max = images[i].shape[1], 0, images[i].shape[0], 0
+        # for descriptor in descriptors2:
+        #     warped_descriptor = ss.descriptor_transformation(descriptor, combined_H)
+        #     transformed_point = warped_descriptor[-1][0]
+        #     # print(transformed_point)
+        #     # TODO formations at edges might be lost
+        #     if (transformed_point[0] - 10 < prev_x_min or transformed_point[0] + 10 > prev_x_max or 
+        #         transformed_point[1] - 10 < prev_y_min or transformed_point[1] + 10 > prev_y_max):
+        #         warped_descriptors.append(warped_descriptor)
+        #         if transformed_point[0] < x_min:
+        #             x_min = transformed_point[0]
+        #         if transformed_point[0] > x_max:
+        #             x_max = transformed_point[0]
+        #         if transformed_point[1] < y_min:
+        #             y_min = transformed_point[1]
+        #         if transformed_point[1] > y_max:
+        #             y_max = transformed_point[1]
+        # print(f"warped descriptors {len(warped_descriptors)}")
+        # combined_descriptors = combined_descriptors + warped_descriptors
+        # prev_x_max, prev_x_min, prev_y_max, prev_y_min = x_max, x_min, y_max, y_min
+        # # print(x_min, x_max, y_min, y_max)
+        descriptors1 = descriptors2
+
+        # # Calculate the distance and angle between the two images
+        # image_angles.append(int(paths[i].split("_")[-1].split(".")[0]))
+        
+        # anchor_point = np.array([images[start_image].shape[1] // 2, images[start_image].shape[0] // 2, 1])  # [x, y, 1]
+        # # Transform the anchor point using the homography matrix
+        # transformed_point = combined_H @ anchor_point
+        # transformed_point /= transformed_point[2]  # Normalize to get [x, y]
+        # # Extract transformed (x, y) coordinates
+        # t_x, t_y = int(transformed_point[0])-images[start_image].shape[1] // 2, int(transformed_point[1]) - images[start_image].shape[0] // 2
+        # # px_distances.append(t_x) #**2 + t_y**2)
+        # px_distances.append(t_x**2 + t_y**2)
+
+
+        # # ## display single result
+        # # height1, width1 = images[i-1].shape[:2]
+        # # warped_image2 = cv2.warpAffine(images[i], H[:2,:], (width1, height1))
+        # # # warped_image2 = cv2.warpPerspective(images[i-1], H, (width1, height1))
+        # # combined_image = cv2.addWeighted(images[i-1], 0.5, warped_image2, 0.5, 0)
+        # # cv2.imwrite("aligendImage.jpg", warped_image2)
+        # # cv2.imwrite("Combined.jpg", combined_image)
+        # # cv2.waitKey(0)
+        # # cv2.destroyAllWindows()
+
+        # if visualisation:
+        #     height1, width1 = max(combined_image_total.shape[0], int(y_max)), max(combined_image_total.shape[1], int(x_max))
+        #     # print(height1, width1)
+        #     combined_image_total_resized = np.zeros((height1, width1, 3), dtype=np.uint8)
+        #     combined_image_total_resized[:combined_image_total.shape[0], :combined_image_total.shape[1]] = combined_image_total
+        #     # warped_image2 = cv2.warpPerspective(images[i-1], combined_H, (combined_image_total.shape[1], combined_image_total.shape[0]))
+        #     warped_image2 = cv2.cvtColor(images[i], cv2.COLOR_GRAY2BGR)
+        #     warped_image2 = cv2.rectangle(warped_image2, (0, 0), 
+        #       (warped_image2.shape[1] - 1, warped_image2.shape[0] - 1), 
+        #       (0,0,255), 10)
+        #     warped_image2 = cv2.warpAffine(warped_image2, combined_H[:2, :], (width1, height1))
+        #     combined_image_total = cv2.addWeighted(combined_image_total_resized,1, warped_image2, 0.5, 0.5)
+        #     cv2.imwrite("aligendImageTotal.jpg", warped_image2)
+        #     cv2.imwrite(os.path.join(folder,"StarMap.jpg"), combined_image_total)
+        #     cv2.waitKey(0)
+        #     cv2.destroyAllWindows()
+
+
+    # TODO this has to come form H combined in the end
+    # for that keep array of H's and apply correction in the end
+    loop_closing_correction = get_loop_closing_delta_R(combined_H, H_list)
+
+    combined_H = np.eye(3)
+
+    for i, H in enumerate(H_list):
+        i = i + 1
+        H = loop_closing_correction @ H
+        
         name = os.path.join(folder, f"{os.path.basename(paths[i-1])}-{os.path.basename(paths[i])}.npy")
         np.save(name, H)
 
+        
         combined_H = combined_H.dot(H)
         warped_descriptors = []
         x_min, x_max, y_min, y_max = images[i].shape[1], 0, images[i].shape[0], 0
+        descriptors2 = np.load(os.path.join(folder, f"{os.path.basename(paths[i])}-descriptors.npy"), allow_pickle=True)  # TODO remove +1
+
         for descriptor in descriptors2:
             warped_descriptor = ss.descriptor_transformation(descriptor, combined_H)
             transformed_point = warped_descriptor[-1][0]
@@ -85,6 +210,7 @@ def createStarMap(folder, visualisation=False):
         transformed_point = combined_H @ anchor_point
         transformed_point /= transformed_point[2]  # Normalize to get [x, y]
         # Extract transformed (x, y) coordinates
+        # TODO scale this with loop closing, if image_360 is not really at 360. FOr that use H between last and first image
         t_x, t_y = int(transformed_point[0])-images[start_image].shape[1] // 2, int(transformed_point[1]) - images[start_image].shape[0] // 2
         # px_distances.append(t_x) #**2 + t_y**2)
         px_distances.append(t_x**2 + t_y**2)
@@ -118,6 +244,7 @@ def createStarMap(folder, visualisation=False):
             cv2.destroyAllWindows()
 
 
+
     print(f"saving combined descriptors {len(combined_descriptors)}")
     np.save(os.path.join(folder, f"combined-descriptors.npy"),  np.array(combined_descriptors, dtype=object), allow_pickle=True)
 
@@ -129,6 +256,8 @@ def createStarMap(folder, visualisation=False):
     # transformed_point /= transformed_point[2]  # Normalize to get [x, y]
     # # Extract transformed (x, y) coordinates
     # t_x, t_y = int(transformed_point[0])-images[start_image].shape[1] // 2, int(transformed_point[1]) - images[start_image].shape[0] // 2
+   
+    
     np.save(os.path.join(folder, f"star_map_size_squared.npy"), t_x**2 + t_y**2)
 
     # TODO check if this improves with real data
