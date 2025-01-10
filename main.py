@@ -1,5 +1,5 @@
 
-# import camera
+import camera
 import AttitudeDetermination
 import extractDescpriptors
 import createStarMap
@@ -35,8 +35,6 @@ def send_int(val):
 
 while True:
     try:
-        # TODO replace this with uart command
-        
         text = "1) Take pictures and get descriptors\n2) Stitch star map\n3) Find current angle\n4) Set working folder\n5) Redo descriptors\n"
         val = read_int(text)
 
@@ -51,30 +49,28 @@ while True:
             increment = 15
             angle = start_angle
 
-            # camera.init()
-            # while(angle <= max_angle):
-            #     print(f"angle set to {angle}")  # TODO sent uart command and wait for answer
-            #     sleep(sleep_time) # wait for uart feedback from pointing
-            #     image_path = os.path.join(folder, f"image_{angle}.jpg")
-            #     camera.take_picture(image_path)
-            #     # extractDescpriptors.analyse(image_path, folder)
-            #     threading.Thread(target=extractDescpriptors.analyse, args=(image_path, folder, visualisation)).start()
-            #     angle = angle + increment
-            # camera.deinit()
-            # print("Pictures taken and extracted descriptors")
+            camera.init()
+            while(angle <= max_angle):
+                send_int(angle)  # This is required angle
+                read_int("Press any key to take picture") # wait until pointing is done
+                image_path = os.path.join(folder, f"image_{angle}.jpg")
+                camera.take_picture(image_path)
+                threading.Thread(target=extractDescpriptors.analyse, args=(image_path, folder, visualisation)).start()
+                angle = angle + increment
+            camera.deinit()
+            print("Pictures taken and extracted descriptors")
         elif val == 2:
             createStarMap.createStarMap(folder, visualisation)
         elif val == 3:
-            image_path = "current_270.jpg"
-            # camera.init()
-            # camera.take_picture(image_path)
-            # camera.deinit()
-            # image_path = "run-all copy/image_195.jpg"
+            image_path = "current.jpg"
+            camera.init()
+            camera.take_picture(image_path)
+            camera.deinit()
+            image_path = "run-all copy/image_195.jpg"
             # TODO remove star map and visualization to improve performance
             attidude = AttitudeDetermination.find_attitude(folder, 
                                                         image_path,
                                                         visualisation)
-            print(f"Attitude: {attidude}")
             send_int(attidude)
         elif val == 4:
             input = read_int("Enter folder name: ")
@@ -93,10 +89,10 @@ while True:
         send_int(0)  # 0 is done
     except KeyboardInterrupt:
         print("Exiting")
-        # camera.deinit()
+        camera.deinit()
         break
     except Exception as e:
         print("Error occured")
         print(traceback.format_exc())
         send_int(254)  # 254 is error
-        # camera.deinit()
+        camera.deinit()
