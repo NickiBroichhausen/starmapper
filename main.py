@@ -8,27 +8,39 @@ import os
 import threading
 import traceback
 import StarSift as ss
+import serial
 
-
-# Reciecve UART
-# Take pictures
-# get descriptors
-# stitch star map
-# find current angle
-
-# maybe define run? folder?
-
-# TODO configure these
 folder = "star_data"
-# folder = "run-all"
+
 visualisation = True
+uart = True
+ser = None
+if uart:
+    ser = serial.Serial('/dev/serial0', 9600)  # open serial port
+
+
+def read_int(text):
+    if uart:
+        #read one byte
+        return ser.read()
+    else:
+        return int(input(text))
+    
+def send_int(val):
+    if uart:
+        ser.write(val)
+    else:
+        print(f"UART got value: {val}")
+
 
 while True:
     try:
         # TODO replace this with uart command
-        val = input("1) Take pictures and get descriptors\n2) Stitch star map\n3) Find current angle\n4) Set working folder\n5) Redo descriptors\n")
+        
+        text = "1) Take pictures and get descriptors\n2) Stitch star map\n3) Find current angle\n4) Set working folder\n5) Redo descriptors\n"
+        val = read_int(text)
 
-        if val == "1":
+        if val == 1:
             # check if folder exist
             if not os.path.exists(folder):
                 os.makedirs(folder)
@@ -50,10 +62,10 @@ while True:
             #     angle = angle + increment
             # camera.deinit()
             # print("Pictures taken and extracted descriptors")
-        elif val == "2":
+        elif val == 2:
             createStarMap.createStarMap(folder, visualisation)
-        elif val == "3":
-            image_path = "current_180.jpg"
+        elif val == 3:
+            image_path = "current_270.jpg"
             # camera.init()
             # camera.take_picture(image_path)
             # camera.deinit()
@@ -62,22 +74,23 @@ while True:
             attidude = AttitudeDetermination.find_attitude(folder, 
                                                         image_path,
                                                         visualisation)
-            print(f"Attitude: {attidude}") # TODO send this with UART
-        elif val == "4":
-            # TODO get this from UART
-            input = input("Enter folder name: ")
-            folder = input
+            print(f"Attitude: {attidude}")
+            send_int(attidude)
+        elif val == 4:
+            input = read_int("Enter folder name: ")
+            folder = str(input)
 
             # check if folder exist
             if not os.path.exists(folder):
                 os.makedirs(folder)
 
-        elif val == "5":
+        elif val == 5:
             images = ss.get_image_paths(folder)
             for img in images:
                 threading.Thread(target=extractDescpriptors.analyse, args=(img, folder, visualisation)).start()
         else:
-            print("Invalid input")
+            send_int(255)  # 255 is invalid command
+        send_int(0)  # 0 is done
     except KeyboardInterrupt:
         print("Exiting")
         # camera.deinit()
@@ -85,4 +98,5 @@ while True:
     except Exception as e:
         print("Error occured")
         print(traceback.format_exc())
+        send_int(254)  # 254 is error
         # camera.deinit()

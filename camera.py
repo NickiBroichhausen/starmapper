@@ -40,6 +40,7 @@ def take_picture(image_path):
     global cam
     # TODO move image distortion here
     cam.take_photo(image_path)
+    # TODO if image brightness too low, take an other one
 
 def deinit(preview=False):
     global cam

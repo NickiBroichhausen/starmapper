@@ -59,6 +59,9 @@ def find_attitude(folder, image_path, visualisation=False):   # TODO allow star 
     # Using sum of each transform would remove scaling issues but how would i get current px then?
     # TODO remove scaling from star map creation
     #  px_distance_current/px_distance_map = w/360
+
+    #TODO the t_y offset should not influence the angle prediction. titling the camera does not change the heading. Maybe only use x??
+    # or use the polyfit(x,y) and calc a projection on it?? (normal from esimated position to poylfit)
     px_distance_current = (t_x-image.shape[1] // 2)**2 + (t_y-image.shape[0] // 2)**2   # TODO maybe use top left corner instead of center? Maybe change this for the total distance?
 
     print(f"px_distance_current: {px_distance_current}")
@@ -70,6 +73,8 @@ def find_attitude(folder, image_path, visualisation=False):   # TODO allow star 
     cubic_poly = np.poly1d(panorama_curvature_params)            # Create a polynomial function
     # y_fit = cubic_poly(t_x-image.shape[1] // 2)
     y_fit = cubic_poly(px_distance_current)
-    print(f"corrected angleL: {y_fit}")
+    print(f"corrected angleL: {y_fit}")  # TODO this should really be removed. No scaling and loop closing should make this useless ... why is it so good??? :(
+        # TODO maybe check x,y of the images in star map in a plot if it is a roughly strange line or if there is a curvature for some reason?
+        # also plot straight line from start to end -> there is probbly curve: how to fix, why is it even there. shouldnt be thereo
 
     return angle%360
