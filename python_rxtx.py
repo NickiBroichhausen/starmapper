@@ -46,7 +46,7 @@ def satellite_mode_receiver(data):
 
 def pos_receiver(data):
   try:
-    unpacked = struct.unpack("fffxB", data)
+    unpacked = struct.unpack("ffff", data)
     print("stm sends pos data: {} {} {}".format(unpacked[0],unpacked[1],unpacked[2]))
   except Exception as e:
     print(e)
@@ -61,9 +61,9 @@ stm2rasMode = rodos.Topic(1014) #1011
 stm2rasPos = rodos.Topic(1011)
 
 
-luart = rodos.LinkinterfaceUART(path="/dev/rfcomm0")
+luart = rodos.LinkinterfaceUART(path="/dev/serial0")
 gwUart = rodos.Gateway(luart)
-gwUart.run()
+
 
 #receiver
 stm2rasCommands.addSubscriber(starSensorCommandReceiver)
@@ -72,23 +72,23 @@ stm2rasPos.addSubscriber(pos_receiver)
 #sender
 gwUart.forwardTopic(ras2stmCommands)
 gwUart.forwardTopic(ras2stmControlValue)
-
+gwUart.run()
 sensor_index = 0
 
 while True:
   # Dummy sensor data
 
-  if(mission_star_mapper):
+  #if(mission_star_mapper):
     # Pack sensor data to a struct that RODOS recognizes
-    if(ready_for_picture):
+  #  if(ready_for_picture):
       #take picture then:
-      sensor_struct = struct.pack("B",1)
-      stm2rasCommands.publish(sensor_struct)#command "picture made"
-      ready_for_picture = False
+  sensor_struct = struct.pack("B",1)
+  ras2stmCommands.publish(sensor_struct)#command "picture made"
+  ready_for_picture = False
 
-  if(control_mode_ai_vel | control_mode_ai_pos):
-    data_struct = struct.pack("f",0.123456789) #test value
-    ras2stmControlValue.publish(data_struct)
+  #if(control_mode_ai_vel | control_mode_ai_pos):
+  data_struct = struct.pack("f",0.123456789) #test value
+  ras2stmControlValue.publish(data_struct)
 
-
+  print("sent") 
   time.sleep(1)
