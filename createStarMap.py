@@ -165,17 +165,41 @@ def createStarMap(folder, visualisation=False):
     # for that keep array of H's and apply correction in the end
     loop_closing_correction = get_loop_closing_delta_R(combined_H, H_list)
 
-    combined_H = np.eye(3)
 
+    combined_H = np.eye(3)
     for i, H in enumerate(H_list):
         i = i + 1
         H = loop_closing_correction @ H
         
-        name = os.path.join(folder, f"{os.path.basename(paths[i-1])}-{os.path.basename(paths[i])}.npy")
-        np.save(name, H)
+        # name = os.path.join(folder, f"{os.path.basename(paths[i-1])}-{os.path.basename(paths[i])}.npy")
+        # np.save(name, H)
 
         
         combined_H = combined_H.dot(H)
+
+    #transform dot in center of image by combined_H to get the angle to the center of the first image
+    anchor_point = np.array([images[0].shape[1] // 2, images[0].shape[0] // 2, 1])  # [x, y, 1]
+    # print(f"anchor_point: {anchor_point}")
+    transformed_point = combined_H @ anchor_point
+    transformed_point /= transformed_point[2]  # Normalize to get [x, y]
+    t_x, t_y = int(transformed_point[0]), int(transformed_point[1])
+    # print(f"t_x: {t_x}, t_y: {t_y}")
+    angle_of_panorama = np.arctan2(t_y - images[0].shape[0]//2, t_x - images[0].shape[1]//2)
+    # print(f"correction: {t_y - images[0].shape[0]//2}, {t_x - images[0].shape[1]//2}")
+    print(f"INFO: angle of panorama: {np.degrees(angle_of_panorama)}")
+    combined_H = np.eye(3)
+    #rotate combined_H by that angle to correct the panorama
+    combined_H = combined_H.dot(rotation_matrix(-angle_of_panorama)) 
+    # print(f"combined_H: {combined_H}")
+
+    for i, H in enumerate(H_list):
+        i = i + 1
+        H = loop_closing_correction @ H
+        name = os.path.join(folder, f"{os.path.basename(paths[i-1])}-{os.path.basename(paths[i])}.npy")
+        np.save(name, H)
+
+        combined_H = combined_H.dot(H)
+
         warped_descriptors = []
         x_min, x_max, y_min, y_max = images[i].shape[1], 0, images[i].shape[0], 0
         descriptors2 = np.load(os.path.join(folder, f"{os.path.basename(paths[i])}-descriptors.npy"), allow_pickle=True)  # TODO remove +1
