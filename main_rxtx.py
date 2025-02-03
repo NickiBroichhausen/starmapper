@@ -22,7 +22,7 @@ def starSensorCommandReceiver(data):
   global RODOS_take_pictures
   try:
     unpacked = struct.unpack("B", data)
-    print("stm sends data: {}".format(unpacked[0]))
+    print("stm sends cmd: {}".format(unpacked[0]))
     if(unpacked[0]==1): #take next picture
       RODOS_ready_for_picture = True
     if(unpacked[0]==0): # abort
@@ -48,7 +48,7 @@ def satellite_mode_receiver(data):
   global RODOS_get_attitude
   try:
     unpacked = struct.unpack("BBB", data)
-    print("stm sends data: {} {} {}".format(unpacked[0],unpacked[1],unpacked[2]))
+    print("stm sends mode: {} {} {}".format(unpacked[0],unpacked[1],unpacked[2]))
     # if(unpacked[1]==3):
     #   control_mode_ai_vel = True
     # else:
