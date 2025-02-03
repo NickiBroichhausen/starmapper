@@ -84,6 +84,7 @@ def pos_receiver(data):
 
 ras2stmCommands = rodos.Topic(1021)
 stm2rasCommands = rodos.Topic(1020)
+ras2stmAttitiude = rodos.Topic(1023)
 ras2stmControlValue = rodos.Topic(1024)
 stm2rasSetFolder = rodos.Topic(1022)
 stm2rasMode = rodos.Topic(1014) #1011
@@ -100,6 +101,7 @@ stm2rasMode.addSubscriber(satellite_mode_receiver)
 stm2rasPos.addSubscriber(pos_receiver)
 stm2rasSetFolder.addSubscriber(setFolder)
 #sender
+gwUart.forwardTopic(ras2stmAttitiude)
 gwUart.forwardTopic(ras2stmCommands)
 gwUart.forwardTopic(ras2stmControlValue)
 
@@ -135,7 +137,7 @@ while True:
           
           #command "picture made"
           sensor_struct = struct.pack("B",1)
-          stm2rasCommands.publish(sensor_struct)
+          ras2stmCommands.publish(sensor_struct)
           RODOS_ready_for_picture = False
 
         if(RODOS_pictures_done):
@@ -143,7 +145,7 @@ while True:
           createStarMap.createStarMap(folder, visualisation)
           #star mapping done
           sensor_struct = struct.pack("B",0)
-          stm2rasCommands.publish(sensor_struct)
+          ras2stmCommands.publish(sensor_struct)
 
           RODOS_pictures_done = False
           break
@@ -162,7 +164,7 @@ while True:
                                                     visualisation)
         #send attitude
         sensor_struct = struct.pack("f",attidude)  # TODO what to return here? float?
-        stm2rasCommands.publish(sensor_struct)
+        ras2stmAttitiude.publish(sensor_struct)
 
         if(not RODOS_get_attitude):
           break
