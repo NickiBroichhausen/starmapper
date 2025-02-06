@@ -21,8 +21,8 @@ def starSensorCommandReceiver(data):
   global RODOS_ready_for_picture
   global RODOS_take_pictures
   try:
-    unpacked = struct.unpack("B", data)
-    print("stm sends cmd: {}".format(unpacked[0]))
+    unpacked = struct.unpack("B3x", data)
+    print("stm sends image  cmd: {}".format(unpacked[0]))
     if(unpacked[0]==1): #take next picture
       RODOS_ready_for_picture = True
     if(unpacked[0]==0): # abort
@@ -75,6 +75,7 @@ def pos_receiver(data):
   try:
     unpacked = struct.unpack("ffff", data)
     print("stm sends pos data: {} {} {}".format(unpacked[0],unpacked[1],unpacked[2]))
+    print(time.time()) 
     RODOS_pos = unpacked[2]
   except Exception as e:
     print(e)
@@ -82,11 +83,11 @@ def pos_receiver(data):
     print(len(data))
 
 
-ras2stmCommands = rodos.Topic(1021)
-stm2rasCommands = rodos.Topic(1020)
-ras2stmAttitiude = rodos.Topic(1023)
-ras2stmControlValue = rodos.Topic(1024)
-stm2rasSetFolder = rodos.Topic(1022)
+ras2stmCommands = rodos.Topic(1121)
+stm2rasCommands = rodos.Topic(1120)
+ras2stmAttitiude = rodos.Topic(1123)
+ras2stmControlValue = rodos.Topic(1124)
+stm2rasSetFolder = rodos.Topic(1122)
 stm2rasMode = rodos.Topic(1014) #1011
 stm2rasPos = rodos.Topic(1011)
 
@@ -131,12 +132,12 @@ while True:
       while True:
         if((RODOS_ready_for_picture)):
           #Take picture
-          image_path = os.path.join(folder, f"image_{int(RODOS_pos)}.jpg")
+          image_path = os.path.join(folder, f"image_{int(RODOS_pos)%360}.jpg")
           camera.take_picture(image_path)
           threading.Thread(target=extractDescpriptors.analyse, args=(image_path, folder, visualisation)).start()
           
           #command "picture made"
-          sensor_struct = struct.pack("B",1)
+          sensor_struct = struct.pack("B3x",1)
           ras2stmCommands.publish(sensor_struct)
           RODOS_ready_for_picture = False
 
@@ -144,11 +145,13 @@ while True:
           #stitch map
           createStarMap.createStarMap(folder, visualisation)
           #star mapping done
-          sensor_struct = struct.pack("B",0)
+          sensor_struct = struct.pack("B3x",0)
           ras2stmCommands.publish(sensor_struct)
 
           RODOS_pictures_done = False
           break
+
+        time.sleep(1)
 
       camera.deinit()
       RODOS_take_pictures = False
