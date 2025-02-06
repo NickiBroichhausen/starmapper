@@ -21,12 +21,12 @@ def starSensorCommandReceiver(data):
   global RODOS_ready_for_picture
   global RODOS_take_pictures
   try:
-    unpacked = struct.unpack("B3x", data)
+    unpacked = struct.unpack("B", data)
     print("stm sends image  cmd: {}".format(unpacked[0]))
     if(unpacked[0]==1): #take next picture
       RODOS_ready_for_picture = True
-    if(unpacked[0]==0): # abort
-      RODOS_take_pictures = False
+    if(unpacked[0]==0): # map ready 
+      RODOS_pictures_done = True 
   except Exception as e:
     print(e)
     print(data)
@@ -59,12 +59,14 @@ def satellite_mode_receiver(data):
     #   control_mode_ai_pos = False
     if(unpacked[0]==2): # attitude is used
       RODOS_get_attitude = True
-    else:
+    if(unpacked[0]!=2):
       RODOS_get_attitude = False
     if(unpacked[2]==2):  #start to create star map
       RODOS_take_pictures = True
-    else:
-      RODOS_pictures_done = True
+    if(unpacked[2]!=2): #aborT:
+      RODOS_take_pictures = False
+      RODOS_ready_for_picture = False
+      RODOS_pictures_done = False 
   except Exception as e:
     print(e)
     print(data)
@@ -74,8 +76,8 @@ def pos_receiver(data):
   global RODOS_pos
   try:
     unpacked = struct.unpack("ffff", data)
-    print("stm sends pos data: {} {} {}".format(unpacked[0],unpacked[1],unpacked[2]))
-    print(time.time()) 
+#    print("stm sends pos data: {} {} {}".format(unpacked[0],unpacked[1],unpacked[2]))
+#    print(time.time()) 
     RODOS_pos = unpacked[2]
   except Exception as e:
     print(e)
@@ -124,6 +126,7 @@ visualisation = False
 while True:  
   try:
     if(RODOS_take_pictures):
+      print("start mapping")
       # check if folder exist
       if not os.path.exists(folder):
         os.makedirs(folder)
@@ -132,6 +135,7 @@ while True:
       while True:
         if((RODOS_ready_for_picture)):
           #Take picture
+          print("taking picture") 
           image_path = os.path.join(folder, f"image_{int(RODOS_pos)%360}.jpg")
           camera.take_picture(image_path)
           threading.Thread(target=extractDescpriptors.analyse, args=(image_path, folder, visualisation)).start()
@@ -143,6 +147,7 @@ while True:
 
         if(RODOS_pictures_done):
           #stitch map
+          print("stitching map") 
           createStarMap.createStarMap(folder, visualisation)
           #star mapping done
           sensor_struct = struct.pack("B3x",0)
