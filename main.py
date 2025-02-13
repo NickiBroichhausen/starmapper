@@ -10,10 +10,10 @@ import traceback
 import StarSift as ss
 import serial
 
-folder = "star_data"
+folder = "666"
 
 visualisation = True
-uart = True
+uart =False 
 ser = None
 if uart:
     ser = serial.Serial('/dev/serial0', 9600)  # open serial port
