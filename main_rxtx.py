@@ -15,11 +15,14 @@ RODOS_pictures_done = False
 RODOS_get_attitude = False
 RODOS_set_folder = False
 RODOS_pos = 0
+RODOS_angular_velocity = 0
+RODOS_yaw_target = 0
 
 # Receivers
 def starSensorCommandReceiver(data):
   global RODOS_ready_for_picture
   global RODOS_take_pictures
+  global RODOS_pictures_done
   try:
     unpacked = struct.unpack("B", data)
     print("stm sends image  cmd: {}".format(unpacked[0]))
@@ -46,6 +49,7 @@ def satellite_mode_receiver(data):
   global RODOS_take_pictures
   global RODOS_pictures_done
   global RODOS_get_attitude
+  global control_mode_ai_pos
   try:
     unpacked = struct.unpack("BBB", data)
     print("stm sends mode: {} {} {}".format(unpacked[0],unpacked[1],unpacked[2]))
@@ -53,16 +57,17 @@ def satellite_mode_receiver(data):
     #   control_mode_ai_vel = True
     # else:
     #   control_mode_ai_vel = False
-    # if(unpacked[1]==4):
-    #   control_mode_ai_pos = True
-    # else:
-    #   control_mode_ai_pos = False
+    if(unpacked[1]==4):
+      control_mode_ai_pos = True
+    else:
+      control_mode_ai_pos = False
     if(unpacked[0]==2): # attitude is used
       RODOS_get_attitude = True
     if(unpacked[0]!=2):
       RODOS_get_attitude = False
     if(unpacked[2]==2):  #start to create star map
       RODOS_take_pictures = True
+      RODOS_pictures_done = False
     if(unpacked[2]!=2): #aborT:
       RODOS_take_pictures = False
       RODOS_ready_for_picture = False
@@ -74,11 +79,23 @@ def satellite_mode_receiver(data):
 
 def pos_receiver(data):
   global RODOS_pos
+  global RODOS_angular_velocity
   try:
     unpacked = struct.unpack("ffff", data)
 #    print("stm sends pos data: {} {} {}".format(unpacked[0],unpacked[1],unpacked[2]))
 #    print(time.time()) 
     RODOS_pos = unpacked[2]
+    RODOS_angular_velocity = unpacked[3]
+  except Exception as e:
+    print(e)
+    print(data)
+    print(len(data))
+
+def target_receiver(data):
+  global RODOS_yaw_target
+  try:
+    unpacked = struct.unpack("ff", data)
+    RODOS_yaw_target = unpacked[0]
   except Exception as e:
     print(e)
     print(data)
@@ -92,6 +109,7 @@ ras2stmControlValue = rodos.Topic(1124)
 stm2rasSetFolder = rodos.Topic(1122)
 stm2rasMode = rodos.Topic(1014) #1011
 stm2rasPos = rodos.Topic(1011)
+stm2rasTarget = rodos.Topic(1017)
 
 
 luart = rodos.LinkinterfaceUART(path="/dev/serial0")
@@ -102,6 +120,7 @@ gwUart.run()
 stm2rasCommands.addSubscriber(starSensorCommandReceiver)
 stm2rasMode.addSubscriber(satellite_mode_receiver)
 stm2rasPos.addSubscriber(pos_receiver)
+stm2rasTarget.addSubscriber(target_receiver)
 stm2rasSetFolder.addSubscriber(setFolder)
 #sender
 gwUart.forwardTopic(ras2stmAttitiude)
@@ -119,6 +138,9 @@ import os
 import threading
 import traceback
 # import StarSift as ss
+
+
+from ..basilisk.FloatSat_AI_Controller import AI_Controller as AI_Controller
 
 folder = "1"
 visualisation = False
@@ -186,9 +208,13 @@ while True:
           os.makedirs(folder)
       RODOS_set_folder = False
 
-    # if(control_mode_ai_vel | control_mode_ai_pos):
-    #   data_struct = struct.pack("f",0.123456789) #test value for torque
-    #   ras2stmControlValue.publish(data_struct)
+    if(control_mode_ai_pos):
+      yaw = RODOS_pos
+      angular_velocity = RODOS_angular_velocity
+      target = RODOS_yaw_target
+      control = AI_Controller.get_control(yaw, target, angular_velocity)
+      data_struct = struct.pack("f",control) #value for torque
+      ras2stmControlValue.publish(data_struct)
 
     time.sleep(1)
 
