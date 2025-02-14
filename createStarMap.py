@@ -75,6 +75,11 @@ def createStarMap(folder, visualisation=False):
 
     H_list = []
 
+    filtered_images = []
+    filtered_images.append(images[start_image])
+    filtered_paths = []
+    filtered_paths.append(paths[start_image])
+
     for i in range(start_image+1,  len(images)):
         print(f"processing image {paths[i]}")
         # _, descriptors2 = ss.get_descriptors(images[i], True)
@@ -88,6 +93,14 @@ def createStarMap(folder, visualisation=False):
             points1, points2 = ss.match_descriptors(descriptors1, descriptors2, images[i-1], images[i])
         else:
             points1, points2 = ss.match_descriptors(descriptors1, descriptors2)
+
+        if len(points1) < 4:
+            print(f"WARNING: not enough points to calculate homography")
+            continue # skip this picture
+        else:
+            filtered_images.append(images[i])
+            filtered_paths.append(paths[i])
+
         H = ss.get_transform_matrix(points1, points2)
 
         H_list.append(H)
@@ -160,6 +173,8 @@ def createStarMap(folder, visualisation=False):
         #     cv2.waitKey(0)
         #     cv2.destroyAllWindows()
 
+    images = filtered_images
+    paths = filtered_paths
 
     # TODO this has to come form H combined in the end
     # for that keep array of H's and apply correction in the end

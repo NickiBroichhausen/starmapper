@@ -216,6 +216,13 @@ def get_descriptors(image, visualize=False):
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
+    average_size = 0
+    for descriptor in descriptors:
+        average_size += descriptor[0][3]
+    average_size /= len(descriptors)
+    if len(descriptors) < 5 or average_size > 300:
+        return [], []
+
     return brightest_dots, descriptors
 
 
@@ -326,7 +333,7 @@ def match_descriptors(descriptors1, descriptors2, image1=None, image2=None):
         if best_match[5] > 0:
             point2 = descriptors2[best_match_indx][-1][0]
             if point2 in matched_points2:
-                print("WARNING: point already matched")
+                # print("WARNING: point already matched")
                 existing_index = matched_points2.index(point2)
                 if best_match[5] > meta[existing_index][2][5]:
                     matched_points1[existing_index] = descriptors1[indx][-1][0]
@@ -338,7 +345,8 @@ def match_descriptors(descriptors1, descriptors2, image1=None, image2=None):
                 matched_points2.append(point2)
                 meta.append((indx, best_match_indx, best_match))
         else:
-            print("WARNING: No match found")
+            # print("WARNING: No match found")
+            pass
 
     if image1 is not None and image2 is not None:
         # Concatenate images side by side
