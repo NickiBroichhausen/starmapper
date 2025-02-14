@@ -57,7 +57,7 @@ def satellite_mode_receiver(data):
     #   control_mode_ai_vel = True
     # else:
     #   control_mode_ai_vel = False
-    if(unpacked[1]==4):
+    if(unpacked[1]==3):
       control_mode_ai_pos = True
     else:
       control_mode_ai_pos = False
@@ -96,6 +96,7 @@ def target_receiver(data):
   try:
     unpacked = struct.unpack("ff", data)
     RODOS_yaw_target = unpacked[0]
+    print(f"recieved target: {RODOS_yaw_target}") 
   except Exception as e:
     print(e)
     print(data)
@@ -140,7 +141,7 @@ import traceback
 # import StarSift as ss
 
 
-from ..basilisk.FloatSat_AI_Controller import AI_Controller as AI_Controller
+from FloatSat_AI_Controller import AI_Controller as AI_Controller
 
 folder = "1"
 visualisation = False
@@ -210,13 +211,15 @@ while True:
 
     if(control_mode_ai_pos):
       yaw = RODOS_pos
-      angular_velocity = RODOS_angular_velocity
+      angular_velocity = -RODOS_angular_velocity
+      angular_velocity /= 100 
       target = RODOS_yaw_target
       control = AI_Controller.get_control(yaw, target, angular_velocity)
       data_struct = struct.pack("f",control) #value for torque
       ras2stmControlValue.publish(data_struct)
-
-    time.sleep(1)
+      print(f"ai recieved: {yaw}, {target}, {angular_velocity}")
+      print(f"ai sent: {control}")
+    time.sleep(0.1)
 
   except Exception as e:
     print(e)
