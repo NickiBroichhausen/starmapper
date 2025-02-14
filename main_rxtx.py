@@ -155,14 +155,19 @@ while True:
         os.makedirs(folder)
       
       camera.init()
+      threads = []
       while True:
         if((RODOS_ready_for_picture)):
           #Take picture
           print("taking picture") 
+          time.sleep(1)
           image_path = os.path.join(folder, f"image_{int(RODOS_pos)%360}.jpg")
           camera.take_picture(image_path)
-          threading.Thread(target=extractDescpriptors.analyse, args=(image_path, folder, visualisation)).start()
-          
+          time.sleep(1)
+          t = threading.Thread(target=extractDescpriptors.analyse, args=(image_path, folder, visualisation))
+          t.start()
+          threads.append(t)
+
           #command "picture made"
           sensor_struct = struct.pack("B3x",1)
           ras2stmCommands.publish(sensor_struct)
@@ -170,6 +175,9 @@ while True:
 
         if(RODOS_pictures_done):
           #stitch map
+          print("waiting for threads to finish")
+          for t in threads:
+            t.join()
           print("stitching map") 
           createStarMap.createStarMap(folder, visualisation)
           #star mapping done
@@ -196,6 +204,7 @@ while True:
         #send attitude
         sensor_struct = struct.pack("f",attidude)  # TODO what to return here? float?
         ras2stmAttitiude.publish(sensor_struct)
+        os.delete(image_path)
 
         if(not RODOS_get_attitude):
           break
