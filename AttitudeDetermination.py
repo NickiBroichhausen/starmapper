@@ -79,11 +79,11 @@ def find_attitude(folder, image_path, visualisation=False):   # TODO allow star 
     print(f"x distance angel: {((t_x-image.shape[1] // 2)/size_x)*360}")
     angle = 360 * np.sqrt(px_distance_current / total_size_squared)
 
-    # panorama_curvature_params = np.load(os.path.join(folder, "panorama_curvature_params.npy"))
-    # cubic_poly = np.poly1d(panorama_curvature_params)            # Create a polynomial function
-    # y_fit = cubic_poly(t_x-image.shape[1] // 2)
+    panorama_curvature_params = np.load(os.path.join(folder, "panorama_curvature_params.npy"))
+    cubic_poly = np.poly1d(panorama_curvature_params)            # Create a polynomial function
+    y_fit = cubic_poly(t_x-image.shape[1] // 2)
     # y_fit = cubic_poly(px_distance_current)
-    # print(f"corrected angleL: {y_fit}")  # TODO this should really be removed. No scaling and loop closing should make this useless ... why is it so good??? :(
+    print(f"corrected angleL: {y_fit}")  # TODO this should really be removed. No scaling and loop closing should make this useless ... why is it so good??? :(
         # TODO maybe check x,y of the images in star map in a plot if it is a roughly strange line or if there is a curvature for some reason?
         # also plot straight line from start to end -> there is probbly curve: how to fix, why is it even there. shouldnt be thereo
 
