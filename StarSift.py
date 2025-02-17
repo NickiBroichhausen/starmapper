@@ -216,11 +216,10 @@ def get_descriptors(image, visualize=False):
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-    average_size = 0
+    total_size = 0
     for descriptor in descriptors:
-        average_size += descriptor[0][3]
-    average_size /= len(descriptors)
-    if len(descriptors) < 5 or average_size > 300:
+        total_size += descriptor[0][3]
+    if len(descriptors) < 5 or total_size/len(descriptors) > 300:
         return [], []
 
     return brightest_dots, descriptors
