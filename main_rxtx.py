@@ -221,7 +221,7 @@ while True:
     if(control_mode_ai_pos):
       yaw = RODOS_pos
       angular_velocity = -RODOS_angular_velocity
-      angular_velocity /= 100 
+      #angular_velocity /= 100 
       target = RODOS_yaw_target
       control = AI_Controller.get_control(yaw, target, angular_velocity)
       data_struct = struct.pack("f",control) #value for torque
