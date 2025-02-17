@@ -1,0 +1,3 @@
+[submodule "FloatSat_AI_Controller"]
+	path = FloatSat_AI_Controller
+	url = https://github.com/NickiBroichhausen/FloatSat_AI_Controller.git
