@@ -55,11 +55,6 @@ corners_all_left = []
 ids_all_left = []
 image_left = []
 
-# image_size_right = None
-# corners_all_right = []
-# ids_all_right = []
-# image_right = []
-
 for iname in images:
     print(iname)
     img = cv2.imread(iname)
@@ -96,37 +91,6 @@ for iname in images:
     if not image_size_left:
         image_size_left = leftGray.shape[::-1]
 
-    # right = img[0:img.shape[0], int(img.shape[1]/2):img.shape[1]]
-    # rightGray = cv2.cvtColor(right, cv2.COLOR_BGR2GRAY)
-    # if len(image_right) < 1:
-    #     image_right = right.copy()
-
-    # if is_opencv47():
-    #     charuco_corners, charuco_ids, corners, ids = detector.detectBoard(rightGray)
-    # else:
-    #     corners, ids, _ = aruco.detectMarkers(
-    #         image=rightGray,
-    #         dictionary=dictionary)
-    #     response, charuco_corners, charuco_ids = aruco.interpolateCornersCharuco(
-    #         markerCorners=corners,
-    #         markerIds=ids,
-    #         image=rightGray,
-    #         board=board)
-    # right = aruco.drawDetectedMarkers(
-    #     image=right, 
-    #     corners=corners)
-    # if len(charuco_ids) > 1:
-    #     corners_all_right.append(charuco_corners)
-    #     ids_all_right.append(charuco_ids)
-        
-    #     right = aruco.drawDetectedCornersCharuco(
-    #         image=right,
-    #         charucoCorners=charuco_corners,
-    #         charucoIds=charuco_ids)
-
-    # if not image_size_right:
-    #     image_size_right = rightGray.shape[::-1]
-
     displayImg = cv2.hconcat([left])
     proportion = max(displayImg.shape) / 1000.0
     displayImg = cv2.resize(displayImg,
@@ -134,19 +98,6 @@ for iname in images:
 
     cv2.imshow('Detected ChArUco markers', displayImg)
     cv2.waitKey(100)
-
-    # #constant definitions
-    # pixel_size = 3 * 10**(-6) # real pixel size from data sheat
-    # T = [[-0.05977191],
-    #     [-0.00023067],
-    #     [ 0.00194674]]
-    # camera_matrix_right = [[592.97749133,   0,         416.537874  ],
-    #                         [  0,        592.875458,   301.02881231],
-    #                         [  0,           0,           1.0        ]]
-
-    # distance_z = (T[0][0] * camera_matrix_right[0][0] * pixel_size)/((corners_all_right[-1][0][0][0] - corners_all_left[-1][0][0][0]) * pixel_size)
-    # print(distance_z)
-    # time.sleep(2)
 
 
 cv2.destroyAllWindows()

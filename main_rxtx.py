@@ -53,10 +53,6 @@ def satellite_mode_receiver(data):
   try:
     unpacked = struct.unpack("BBB", data)
     print("stm sends mode: {} {} {}".format(unpacked[0],unpacked[1],unpacked[2]))
-    # if(unpacked[1]==3):
-    #   control_mode_ai_vel = True
-    # else:
-    #   control_mode_ai_vel = False
     if(unpacked[1]==3):
       control_mode_ai_pos = True
     else:
@@ -202,7 +198,7 @@ while True:
                                                     image_path,
                                                     visualisation)
         #send attitude
-        sensor_struct = struct.pack("f",attidude)  # TODO what to return here? float?
+        sensor_struct = struct.pack("f",attidude)
         ras2stmAttitiude.publish(sensor_struct)
         os.delete(image_path)
 

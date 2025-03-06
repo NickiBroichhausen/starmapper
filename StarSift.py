@@ -6,11 +6,10 @@ import glob
 import os
 import re
 
-#TODO check all these guesses and thresholds
 RESIZE_FACTOR = 1
 BRIGHTNESS_THRESHOLD = 20
 SIZE_THRESHOLD = 10 * RESIZE_FACTOR      # Has to match with RESIZE_FACTOR
-NEIGHBOR_RADIUS = 800 * RESIZE_FACTOR   # Radius for finding neighbors  #TODO do circle stuff
+NEIGHBOR_RADIUS = 800 * RESIZE_FACTOR   # Radius for finding neighbors
 PERCENTAGE_OF_DESCRIPTORS = 1  # Percentage of descriptors to extract
 MAX_ROTATION = 15  # Maximum rotation between images in degrees
 
@@ -45,11 +44,9 @@ def get_image_paths(folder_path):
 
 def load_images(image_paths, undistort=True):
     images = [cv2.imread(img_path) for img_path in image_paths]
-    # TODO do undistortion here
     images = [cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) for img in images]
     if undistort:
         images = [cv2.undistort(img, camera_matrix, distortion_coefficients, None, new_camera_matrix) for img in images]
-        # TODO remove this if camera is on rotation axis
         if map_x is not None and map_y is not None:
             print("INFO: Using remapping")
             images = [cv2.remap(img, map_x, map_y, cv2.INTER_LINEAR) for img in images]
@@ -100,7 +97,7 @@ def extract_stars(image, visualize=False):
     return dot_data
 
 def find_neighbours(position, dot_data, image=None):
-    kdtree = KDTree([dot[:2] for dot in dot_data])   #TODO this should only happen once and not in every function call
+    kdtree = KDTree([dot[:2] for dot in dot_data])  
     neighbors_idx = kdtree.query_ball_point(position, NEIGHBOR_RADIUS)
     neighbors = [dot_data[i] for i in neighbors_idx]
 
@@ -147,8 +144,6 @@ def get_formation(position, neighbours, image=None):
 
     # Sort by distance
     distances_and_angles.sort(key=lambda x: x[1], reverse=True)
-    # Remove the query position from the list
-    # distances_and_angles = distances_and_angles[:-1]   #TODO check if this is correct
 
     if image is not None:
         # Annotate the image with lines, distances, and angles
@@ -231,46 +226,26 @@ def get_percantage_dif(value1, value2):
     return abs(value1 - value2) / ((value1 + value2) / 2)
 
 def calc_error(feature, feature2, rot_guess):
-    # TODO The distance error calculation does not work like this 
-    # because the images would need to be distorted first 
-    # AND distances get larger when they are closer to the edge of the frame
-
-    rot_error = abs(feature[2] - feature2[2] - rot_guess)   # include distance scaling  # TODO account for wrap around at 360. To avoid this, use x,y distance instead of angle
+    rot_error = abs(feature[2] - feature2[2] - rot_guess)   
     d_error = get_percantage_dif(feature[1], feature2[1]) 
     s_error = get_percantage_dif(feature[3], feature2[3])
     b_error = abs(feature[4] - feature2[4]) 
     return d_error, rot_error, s_error, b_error
 
 def acceptable_error(d_error, rot_error, s_error, b_error):
-    # TODO replace this magic numbers with something that makes sense
-    if d_error < 0.1:  # TODO do image distortion first
+    if d_error < 0.1: 
         if rot_error < 5: 
             return True
-            if s_error < 1.0:  #dont do percentage error for size
-                # return True
-                if b_error < 40:   # TODO this sucks
-                    return True
     return False
 
-def compare_match(descriptor, descriptor2):  # TODO make return value a likelihood of a match
+def compare_match(descriptor, descriptor2):
     features = min(len(descriptor), len(descriptor2))
 
     possible_matches = []
 
     if features > 2:
-        # TODO try to use less rotation guesses for better performance
-        # (is the list sorted by distance? Then taking the two points with largest distance makes sense)
-
         possible_rotations = [descriptor[0][2] - descriptor2[i][2] for i in range(len(descriptor2))]
-        possible_rotations = [x for x in possible_rotations if -MAX_ROTATION < x < MAX_ROTATION]  # TODO maybe negate?
-        # possible_rotations = [
-        #     x + offset
-        #     for x in (descriptor[0][2] - descriptor2[i][2] for i in range(len(descriptor2)))
-        #     for offset in np.arange(-2,2,0.5)    # TODO maybe reduce step size or environment size for perfoemance
-        #     if -MAX_ROTATION < x + offset < MAX_ROTATION
-        # ]
-        # possible_rotations = [4.5]
-        # possible_rotations = [x*0.5  for x in range(-MAX_ROTATION*2,MAX_ROTATION*2)]
+        possible_rotations = [x for x in possible_rotations if -MAX_ROTATION < x < MAX_ROTATION]
         for rot_guess in possible_rotations:
             self_error = calc_error(descriptor[-1], descriptor2[-1], rot_guess)
             rot_error = 0
@@ -279,7 +254,7 @@ def compare_match(descriptor, descriptor2):  # TODO make return value a likeliho
             b_error = self_error[3]
 
             matched_features = 0
-            for feature_1 in descriptor[:-1]: # TODO sort by angle and dont compare every point with every other point
+            for feature_1 in descriptor[:-1]: 
                 best_error = (math.inf, math.inf, math.inf, math.inf)
                 for feature_2 in descriptor2[:-1]:
                     error = calc_error(feature_1, feature_2, rot_guess)
@@ -297,18 +272,10 @@ def compare_match(descriptor, descriptor2):  # TODO make return value a likeliho
                     matched_features += 1
 
             if matched_features > features*0.5 and matched_features > 2 and acceptable_error(d_error/matched_features, rot_error/matched_features, s_error/(matched_features+1), b_error/(matched_features+1)):
-                # print(f"compared {features} features with matches: {matched_features} and rotation guess: {rot_guess}")
-                # print(rot_error/matched_features)
-                # print(d_error/matched_features)
-                # print(s_error/(matched_features+1))
-                # print(b_error/(matched_features+1))
                 possible_matches.append((rot_guess, rot_error/matched_features, d_error/matched_features, s_error/(matched_features+1), b_error/(matched_features+1), matched_features))
     return possible_matches
 
 def match_descriptors(descriptors1, descriptors2, image1=None, image2=None):
-    # assert len(points1) is len(descriptors1)
-    # assert len(points2) is len(descriptors2)
-
     matched_points1 = []
     matched_points2 = []
     meta = []
@@ -389,10 +356,6 @@ def descriptor_transformation(descriptor, H):
     return warped_descriptor
 
 def get_transform_matrix(points1, points2):
-    # H, _ = cv2.findHomography(np.array(points1), np.array(points2), cv2.RANSAC, 50.0 * ss.RESIZE_FACTOR)
-    # H = cv2.getPerspectiveTransform(np.array(points1[:4], dtype=np.float32), np.array(points2[:4], dtype=np.float32))
-   
-   #TODO check which threshold makes sense
     matrix = cv2.estimateAffine2D( np.array(points2, dtype=np.float32), np.array(points1, dtype=np.float32), cv2.RANSAC, ransacReprojThreshold=300.0)[0]
     # matrix = cv2.estimateAffinePartial2D( np.array(points2, dtype=np.float32), np.array(points1, dtype=np.float32), cv2.RANSAC, ransacReprojThreshold=300.0)[0]
     print(f"scaling: {np.linalg.norm(matrix[0])}, {np.linalg.norm(matrix[1])}")
@@ -410,13 +373,5 @@ def get_transform_matrix(points1, points2):
 
     H = np.eye(3)
     H[:2, :] = matrix
-
-    # scale_rotation_matrix = matrix[:2, :2]
-    
-    # # Compute scaling factors as the norms of the rows
-    # scale_x = np.linalg.norm(scale_rotation_matrix[0])
-    # scale_y = np.linalg.norm(scale_rotation_matrix[1])
-    
-    # print("INFO: Scale factors:", scale_x, scale_y)
 
     return H
