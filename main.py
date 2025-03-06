@@ -1,5 +1,4 @@
 
-import camera
 import AttitudeDetermination
 import extractDescpriptors
 import createStarMap
@@ -8,35 +7,26 @@ import os
 import threading
 import traceback
 import StarSift as ss
-import serial
 
-folder = "666"
+folder = "1"
+
+if False:
+    import camera
 
 visualisation = True
-uart =False 
-ser = None
-if uart:
-    ser = serial.Serial('/dev/serial0', 9600)  # open serial port
-
 
 def read_int(text):
-    if uart:
-        #read one byte
-        return ser.read()
-    else:
-        return int(input(text))
-    
+    val = input(text)
+    return val
+
 def send_int(val):
-    if uart:
-        ser.write(val)
-    else:
-        print(f"UART got value: {val}")
+    print(f"UART got value: {val}")
 
 
 while True:
     try:
-        text = "1) Take pictures and get descriptors\n2) Stitch star map\n3) Find current angle\n4) Set working folder\n5) Redo descriptors\n"
-        val = read_int(text)
+        text = "1) Take pictures and get descriptors\n2) Stitch star map\n3) Find current angle\n4) Set working folder\n5) Redo descriptors\n6)attitude for image\n"
+        val = int(read_int(text))
 
         if val == 1:
             # check if folder exist
@@ -73,8 +63,8 @@ while True:
                                                         visualisation)
             send_int(attidude)
         elif val == 4:
-            input = read_int("Enter folder name: ")
-            folder = str(input)
+            val = read_int("Enter folder name: ")
+            folder = str(val)
 
             # check if folder exist
             if not os.path.exists(folder):
@@ -84,15 +74,22 @@ while True:
             images = ss.get_image_paths(folder)
             for img in images:
                 threading.Thread(target=extractDescpriptors.analyse, args=(img, folder, visualisation)).start()
+        elif val == 6:
+            image_path = str(read_int("Enter image path: "))
+            # TODO remove star map and visualization to improve performance
+            attidude = AttitudeDetermination.find_attitude(folder, 
+                                                        image_path,
+                                                        visualisation)
+            send_int(attidude)
         else:
             send_int(255)  # 255 is invalid command
         send_int(0)  # 0 is done
     except KeyboardInterrupt:
         print("Exiting")
-        camera.deinit()
+        # camera.deinit()
         break
     except Exception as e:
         print("Error occured")
         print(traceback.format_exc())
         send_int(254)  # 254 is error
-        camera.deinit()
+        # camera.deinit()
