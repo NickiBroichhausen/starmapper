@@ -393,9 +393,10 @@ def get_transform_matrix(points1, points2):
     # H = cv2.getPerspectiveTransform(np.array(points1[:4], dtype=np.float32), np.array(points2[:4], dtype=np.float32))
    
    #TODO check which threshold makes sense
-    # matrix = cv2.estimateAffine2D( np.array(points2, dtype=np.float32), np.array(points1, dtype=np.float32), cv2.RANSAC, ransacReprojThreshold=300.0)[0]
-    matrix = cv2.estimateAffinePartial2D( np.array(points2, dtype=np.float32), np.array(points1, dtype=np.float32), cv2.RANSAC, ransacReprojThreshold=300.0)[0]
-    
+    matrix = cv2.estimateAffine2D( np.array(points2, dtype=np.float32), np.array(points1, dtype=np.float32), cv2.RANSAC, ransacReprojThreshold=300.0)[0]
+    # matrix = cv2.estimateAffinePartial2D( np.array(points2, dtype=np.float32), np.array(points1, dtype=np.float32), cv2.RANSAC, ransacReprojThreshold=300.0)[0]
+    print(f"scaling: {np.linalg.norm(matrix[0])}, {np.linalg.norm(matrix[1])}")
+    print(matrix)
     rotation_scaling = matrix[:2, :2]
     # Compute scaling factors
     scale_x = np.linalg.norm(rotation_scaling[0])  # Norm of the first row
@@ -405,7 +406,7 @@ def get_transform_matrix(points1, points2):
     # Replace the rotation-scaling part with the normalized rotation matrix
     normalized_matrix = matrix.copy()
     normalized_matrix[:2, :2] = normalized_rotation
-    matrix = normalized_matrix
+    # matrix = normalized_matrix
 
     H = np.eye(3)
     H[:2, :] = matrix
