@@ -1,3 +1,12 @@
+# StarSift
+
+This repo contains the code to run a star mapping mission on a raspberry Pi for our floatsat mission. For this code to run on the floatsat, following repo is also needed: https://github.com/reshab12/FloatSat.git
+
+## Content
+
+The file `main_rxtx.py` is supposed to be run on the rasbperry pi and connect with the stm board. The file `main.py` can be run localy for testing. 
+
+
 ### PI:
 
 Download an image:
